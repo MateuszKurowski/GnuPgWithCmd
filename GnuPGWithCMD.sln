@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.6.33723.286
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GnuPG", "GnuPG\GnuPG.csproj", "{4C763BEF-D5F3-4A55-9274-12D6D7514768}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Start", "Start\Start.csproj", "{2C12811E-00D4-495C-859C-4163D220F351}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4C763BEF-D5F3-4A55-9274-12D6D7514768}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4C763BEF-D5F3-4A55-9274-12D6D7514768}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4C763BEF-D5F3-4A55-9274-12D6D7514768}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4C763BEF-D5F3-4A55-9274-12D6D7514768}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C12811E-00D4-495C-859C-4163D220F351}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C12811E-00D4-495C-859C-4163D220F351}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C12811E-00D4-495C-859C-4163D220F351}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C12811E-00D4-495C-859C-4163D220F351}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {782728D3-5584-4D80-8272-72CCAD5AB696}
+	EndGlobalSection
+EndGlobal
