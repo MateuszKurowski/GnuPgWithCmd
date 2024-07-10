@@ -77,7 +77,7 @@ namespace GnuPG
                 throw new EmptyPasswordException();
             }
 
-            if (standardError.Contains("B┼é─Ödne has┼éo")
+            if (standardError.ToLower().Contains("bad passphrase")
                 || standardError.ToLower().Contains("błędne hasło"))
             {
                 throw new WrongPasswordException();

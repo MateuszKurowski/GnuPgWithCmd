@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace GnuPG
@@ -54,7 +55,6 @@ namespace GnuPG
                     i++;
                 }
             }
-            
 
             File.WriteAllBytes(path, file);
             return path;
@@ -72,6 +72,9 @@ namespace GnuPG
             cmd.StartInfo.RedirectStandardError = true;
             cmd.StartInfo.CreateNoWindow = true;
             cmd.StartInfo.UseShellExecute = false;
+            cmd.StartInfo.StandardOutputEncoding = Encoding.UTF8;
+            cmd.StartInfo.StandardErrorEncoding = Encoding.UTF8;
+            cmd.StartInfo.EnvironmentVariables["LANG"] = "en_US.UTF-8";
             return cmd;
         }
 
