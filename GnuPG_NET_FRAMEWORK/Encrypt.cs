@@ -22,7 +22,7 @@ namespace GnuPG
             {
                 throw new GnuPGIsNotInstalledException();
             }
-                
+
             publicKeyId = ImportPublicKey(publicKey);
 
             var filePath = Utility.CreateTempFile(fileBytes);
