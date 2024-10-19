@@ -23,7 +23,7 @@ namespace GnuPG
             {
                 throw new GnuPGIsNotInstalledException();
             }
-                
+
             publicKeyId = ImportPublicKey(publicKey);
 
             var filePath = Utility.CreateTempFile(fileBytes);
@@ -69,7 +69,7 @@ namespace GnuPG
         }
 
         public static Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
-         {
+        {
             string publicKeyId = null;
             if (Utility.IsGnuPgInstalledOnPc() == false)
             {
@@ -77,6 +77,7 @@ namespace GnuPG
             }
 
             publicKeyId = ImportPublicKey(publicKey);
+            var result = new Dictionary<int, byte[]>();
 
             foreach (var file in files)
             {
@@ -120,12 +121,11 @@ namespace GnuPG
 
                 var encryptedFileBytes = Utility.GetFile(outputFilePath);
                 Utility.DeleteTempFile(filePath);
+                result.Add(file.Key, encryptedFileBytes);
+            }
 
-                file.Value = encryptedFileBytes;
-}
-
-            return files;
-         }
+            return result;
+        }
 
         private static string BuildQuerry(string filePath, string outputFilePath, string keyId)
         {
