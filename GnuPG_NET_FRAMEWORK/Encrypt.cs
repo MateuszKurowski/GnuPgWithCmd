@@ -97,8 +97,7 @@ namespace GnuPG
                 var standardError = cmd.StandardError.ReadToEnd();
                 cmd.WaitForExit();
                 cmd.Close();
-                if (!string.IsNullOrWhiteSpace(publicKeyId))
-                    Utility.RemoveKeys(publicKeyId);
+                
 
                 if (standardError.ToLower().Contains("no public key"))
                 {
@@ -124,6 +123,9 @@ namespace GnuPG
 
                 result.Add(file.Key, encryptedFileBytes);
             }
+
+            if (!string.IsNullOrWhiteSpace(publicKeyId))
+                Utility.RemoveKeys(publicKeyId);
 
             return result;
         }
