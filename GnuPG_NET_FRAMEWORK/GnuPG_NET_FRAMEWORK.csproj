@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="Decrypt.cs" />
     <Compile Include="Encrypt.cs" />
+    <Compile Include="Exceptions\PublicKeyCurrupted.cs" />
     <Compile Include="Exceptions\EmptyPasswordException.cs" />
     <Compile Include="Exceptions\SecretKeyNotFoundException.cs" />
     <Compile Include="Exceptions\PublicKeyNotFoundException.cs" />

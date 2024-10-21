@@ -12,20 +12,38 @@ namespace GnuPG
             var file = File.ReadAllBytes(filePath);
             var publicKey = File.ReadAllBytes(publicKeyPath);
 
+            if (!Utility.IsGnuPgInstalledOnPc())
+                throw new GnuPGIsNotInstalledException();
+
             var encryptedFile = EncryptData(file, publicKey);
             File.WriteAllBytes(outputFilePath, encryptedFile);
         }
 
         public static byte[] EncryptData(byte[] fileBytes, byte[] publicKey)
         {
-            string publicKeyId = null;
-            if (Utility.IsGnuPgInstalledOnPc() == false)
+            var publicKeyId = ImportPublicKey(publicKey);
+
+            return EncryptFile(ref publicKeyId, fileBytes);
+        }
+
+        public static Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
+        {
+            var publicKeyId = ImportPublicKey(publicKey);
+            var result = new Dictionary<int, byte[]>();
+
+            foreach (var file in files)
             {
-                throw new GnuPGIsNotInstalledException();
+                var fileBytes = file.Value;
+
+                var encryptedFileBytes = EncryptFile(ref publicKeyId, fileBytes);
+                result.Add(file.Key, encryptedFileBytes);
             }
 
-            publicKeyId = ImportPublicKey(publicKey);
+            return result;
+        }
 
+        private static byte[] EncryptFile(ref string publicKeyId, byte[] fileBytes)
+        {
             var filePath = Utility.CreateTempFile(fileBytes);
             var outputFilePath = filePath + "_encrypted";
 
@@ -37,11 +55,27 @@ namespace GnuPG
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
             cmd.StandardInput.Dispose();
+
+            var standardOutput = cmd.StandardOutput.ReadToEnd();
             var standardError = cmd.StandardError.ReadToEnd();
+
             cmd.WaitForExit();
             cmd.Close();
+
+            Utility.DeleteTempFile(filePath);
             if (!string.IsNullOrWhiteSpace(publicKeyId))
                 Utility.RemoveKeys(publicKeyId);
+
+            if (standardError.ToLower().Contains("skipped: Unusable public key"))
+            {
+                throw new PublicKeyCurrupted();
+            }
+
+            if (!string.IsNullOrWhiteSpace(standardError))
+                throw new Exception(standardError);
+
+            //if (!string.IsNullOrWhiteSpace(standardOutput))
+            //    throw new Exception(standardOutput);
 
             if (standardError.ToLower().Contains("no public key"))
             {
@@ -62,69 +96,7 @@ namespace GnuPG
                 throw new PublicKeyNotFoundException();
             }
 
-            var encryptedFileBytes = Utility.GetFile(outputFilePath);
-            Utility.DeleteTempFile(filePath);
-
-            return encryptedFileBytes;
-        }
-
-        public static Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
-        {
-            string publicKeyId = null;
-            if (Utility.IsGnuPgInstalledOnPc() == false)
-            {
-                throw new GnuPGIsNotInstalledException();
-            }
-
-            publicKeyId = ImportPublicKey(publicKey);
-            var result = new Dictionary<int, byte[]>();
-
-            foreach (var file in files)
-            {
-                var fileBytes = file.Value;
-
-                var filePath = Utility.CreateTempFile(fileBytes);
-                var outputFilePath = filePath + "_encrypted";
-
-                var querry = BuildQuerry(filePath, outputFilePath, publicKeyId);
-                var cmd = Utility.CreateProcess();
-                cmd.Start();
-
-                cmd.StandardInput.WriteLine(querry);
-                cmd.StandardInput.Flush();
-                cmd.StandardInput.Close();
-                cmd.StandardInput.Dispose();
-                var standardError = cmd.StandardError.ReadToEnd();
-                cmd.WaitForExit();
-                cmd.Close();
-                if (!string.IsNullOrWhiteSpace(publicKeyId))
-                    Utility.RemoveKeys(publicKeyId);
-
-                if (standardError.ToLower().Contains("no public key"))
-                {
-                    var index = standardError.IndexOf("ID ");
-                    if (index > 1)
-                    {
-                        try
-                        {
-                            var error = standardError.Substring(index + 3);
-                            publicKeyId = error.Substring(0, error.IndexOf("\r"));
-                        }
-                        catch (Exception ex)
-                        {
-                            throw new PublicKeyNotFoundException(ex);
-                        }
-                        throw new PublicKeyNotFoundException(publicKeyId);
-                    }
-                    throw new PublicKeyNotFoundException();
-                }
-
-                var encryptedFileBytes = Utility.GetFile(outputFilePath);
-                Utility.DeleteTempFile(filePath);
-                result.Add(file.Key, encryptedFileBytes);
-            }
-
-            return result;
+            return Utility.GetFile(outputFilePath);
         }
 
         private static string BuildQuerry(string filePath, string outputFilePath, string keyId)
