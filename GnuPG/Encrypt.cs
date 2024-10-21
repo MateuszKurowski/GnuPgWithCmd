@@ -66,7 +66,7 @@ namespace GnuPG
             if (!string.IsNullOrWhiteSpace(publicKeyId))
                 Utility.RemoveKeys(publicKeyId);
 
-            if (standardError.ToLower().Contains("skipped: Unusable public key"))
+            if (standardError.ToLower().Contains("skipped: unusable public key"))
             {
                 throw new PublicKeyCurrupted();
             }
