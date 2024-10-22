@@ -5,9 +5,32 @@ using System.Text;
 
 namespace GnuPG
 {
-    public static class Decrypt
+    public class Decrypt
     {
-        public static void DecryptData(string filePath, string outputFilePath, string passphrase = null, string privateKeyFilePath = null)
+        public bool LogCoomands { get; set; }
+        public string LogFilePath { get; set; }
+
+        public Decrypt(bool logCoomands = true, string logFilePath = null)
+        {
+            LogCoomands = logCoomands;
+
+            if (string.IsNullOrWhiteSpace(logFilePath))
+            {
+                string userDocumentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                string logDirectory = Path.Combine(userDocumentsPath, "Navigator");
+
+                if (!Directory.Exists(logDirectory))
+                {
+                    Directory.CreateDirectory(logDirectory);
+                }
+                LogFilePath = Path.Combine(logDirectory, "GnuPgLogs.txt");
+            }
+            else
+                LogFilePath = logFilePath;
+        }
+
+        public void DecryptData(string filePath, string outputFilePath, string passphrase = null, string privateKeyFilePath = null)
         {
             var encryptedFile = File.ReadAllBytes(filePath);
             var privateKey = File.ReadAllBytes(privateKeyFilePath);
@@ -16,10 +39,10 @@ namespace GnuPG
             File.WriteAllBytes(outputFilePath, decryptedFile);
         }
 
-        public static byte[] DecryptData(byte[] encyptedFileBytes, string passphrase = null, byte[] privateKey = null)
+        public byte[] DecryptData(byte[] encyptedFileBytes, string passphrase = null, byte[] privateKey = null)
         {
             string secretKeyId = null;
-            if (Utility.IsGnuPgInstalledOnPc() == false)
+            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath))
             {
                 throw new GnuPGIsNotInstalledException();
             }
@@ -41,10 +64,15 @@ namespace GnuPG
             cmd.StandardInput.Close();
             cmd.StandardInput.Dispose();
             var standardError = cmd.StandardError.ReadToEnd();
+            var standardOutput = cmd.StandardOutput.ReadToEnd();
             cmd.WaitForExit();
             cmd.Close();
+
+            Utility.LogCommand(LogFilePath, "StandardOutput", standardOutput);
+            Utility.LogCommand(LogFilePath, "StandardError", standardError);
+
             if (!string.IsNullOrWhiteSpace(secretKeyId))
-                Utility.RemoveKeys(secretKeyId);
+                Utility.RemoveKeys(LogFilePath, secretKeyId);
 
             if (standardError.ToLower().Contains("no secret key")
                  || standardError.ToLower().Contains("brak klucza tajnego"))
@@ -89,7 +117,7 @@ namespace GnuPG
             return decryptedFileBytes;
         }
 
-        private static string BuildQuerry(string filePath, string outputFilePath, string passphrase)
+        private string BuildQuerry(string filePath, string outputFilePath, string passphrase)
         {
             var querry = new StringBuilder();
             querry.Append("gpg --pinentry-mode loopback --batch");
@@ -106,7 +134,7 @@ namespace GnuPG
             return querry.ToString();
         }
 
-        private static string ImportSecretKey(byte[] secretKeyBytes, string passphrase = null)
+        private string ImportSecretKey(byte[] secretKeyBytes, string passphrase = null)
         {
             var keyPath = Utility.CreateTempFile(secretKeyBytes, "GnuPGS_Key_Temp.asc");
             var querry = BuildQuerry();
@@ -122,6 +150,9 @@ namespace GnuPG
             cmd.WaitForExit();
             cmd.Dispose();
             cmd.Close();
+
+            Utility.LogCommand(LogFilePath, "StandardOutput", result);
+            Utility.LogCommand(LogFilePath, "StandardError", standardError);
 
             Utility.DeleteTempFile(keyPath);
             if (string.IsNullOrWhiteSpace(standardError) || standardError.Contains("secret key imported") || standardError.Contains("wczytany do zbioru"))
@@ -139,7 +170,7 @@ namespace GnuPG
                     indexOfKeyStart = standardError.IndexOf(keyWord);
                 var keyStartToEnd = standardError.Substring(indexOfKeyStart + keyWord.Length);
                 var keyFragment = keyStartToEnd.Substring(0, keyStartToEnd.IndexOf(":"));
-                return Utility.GetSecretKeyId(keyFragment);
+                return Utility.GetSecretKeyId(LogFilePath, keyFragment);
             }
             else
             {
@@ -163,7 +194,7 @@ namespace GnuPG
             }
         }
 
-        private static void ReadOutput(Process cmd, StringBuilder resultBuilder, StringBuilder errorBuilder, string passphrase)
+        private void ReadOutput(Process cmd, StringBuilder resultBuilder, StringBuilder errorBuilder, string passphrase)
         {
             string line;
             while ((line = cmd.StandardOutput.ReadLine()) != null)

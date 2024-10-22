@@ -5,28 +5,51 @@ using System.Collections.Generic;
 
 namespace GnuPG
 {
-    public static class Encrypt
+    public class Encrypt
     {
-        public static void EncryptData(string filePath, string outputFilePath, string publicKeyPath)
+        public bool LogCoomands { get; set; }
+        public string LogFilePath { get; set; }
+
+        public Encrypt(bool logCoomands = true, string logFilePath = null)
+        {
+            LogCoomands = logCoomands;
+
+            if (string.IsNullOrWhiteSpace(logFilePath))
+            {
+                string userDocumentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+                string logDirectory = Path.Combine(userDocumentsPath, "Navigator");
+
+                if (!Directory.Exists(logDirectory))
+                {
+                    Directory.CreateDirectory(logDirectory);
+                }
+                LogFilePath = Path.Combine(logDirectory, "GnuPgLogs.txt");
+            }
+            else
+                LogFilePath = logFilePath;
+        }
+
+        public void EncryptData(string filePath, string outputFilePath, string publicKeyPath)
         {
             var file = File.ReadAllBytes(filePath);
             var publicKey = File.ReadAllBytes(publicKeyPath);
 
-            if (!Utility.IsGnuPgInstalledOnPc())
+            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath))
                 throw new GnuPGIsNotInstalledException();
 
             var encryptedFile = EncryptData(file, publicKey);
             File.WriteAllBytes(outputFilePath, encryptedFile);
         }
 
-        public static byte[] EncryptData(byte[] fileBytes, byte[] publicKey)
+        public byte[] EncryptData(byte[] fileBytes, byte[] publicKey)
         {
             var publicKeyId = ImportPublicKey(publicKey);
 
             return EncryptFile(ref publicKeyId, fileBytes);
         }
 
-        public static Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
+        public Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
         {
             var publicKeyId = ImportPublicKey(publicKey);
             var result = new Dictionary<int, byte[]>();
@@ -42,7 +65,7 @@ namespace GnuPG
             return result;
         }
 
-        private static byte[] EncryptFile(ref string publicKeyId, byte[] fileBytes)
+        private byte[] EncryptFile(ref string publicKeyId, byte[] fileBytes)
         {
             var filePath = Utility.CreateTempFile(fileBytes);
             var outputFilePath = filePath + "_encrypted";
@@ -62,20 +85,21 @@ namespace GnuPG
             cmd.WaitForExit();
             cmd.Close();
 
+            Utility.LogCommand(LogFilePath, "StandardOutput", standardOutput);
+            Utility.LogCommand(LogFilePath, "StandardError", standardError);
+
             Utility.DeleteTempFile(filePath);
-            if (!string.IsNullOrWhiteSpace(publicKeyId))
-                Utility.RemoveKeys(publicKeyId);
 
             if (standardError.ToLower().Contains("skipped: unusable public key"))
             {
                 throw new PublicKeyCurrupted();
             }
 
-            if (!string.IsNullOrWhiteSpace(standardError))
-                throw new Exception(standardError);
-
             //if (!string.IsNullOrWhiteSpace(standardOutput))
             //    throw new Exception(standardOutput);
+
+            //if (!string.IsNullOrWhiteSpace(standardError))
+            //    throw new Exception(standardError);
 
             if (standardError.ToLower().Contains("no public key"))
             {
@@ -96,10 +120,14 @@ namespace GnuPG
                 throw new PublicKeyNotFoundException();
             }
 
+            if (!string.IsNullOrWhiteSpace(publicKeyId))
+                Utility.RemoveKeys(LogFilePath, publicKeyId);
+
+
             return Utility.GetFile(outputFilePath);
         }
 
-        private static string BuildQuerry(string filePath, string outputFilePath, string keyId)
+        private string BuildQuerry(string filePath, string outputFilePath, string keyId)
         {
             var querry = new StringBuilder();
             querry.Append("gpg");
@@ -114,7 +142,7 @@ namespace GnuPG
             return querry.ToString();
         }
 
-        private static string ImportPublicKey(byte[] secretKeyBytes)
+        private string ImportPublicKey(byte[] secretKeyBytes)
         {
             var keyPath = Utility.CreateTempFile(secretKeyBytes, "GnuPGP_Public_Key_Temp.asc");
             var querry = BuildQuerry();
@@ -129,6 +157,9 @@ namespace GnuPG
             cmd.WaitForExit();
             cmd.Dispose();
             cmd.Close();
+
+            Utility.LogCommand(LogFilePath, "StandardOutput", result);
+            Utility.LogCommand(LogFilePath, "StandardError", standardError);
 
             Utility.DeleteTempFile(keyPath);
             if (string.IsNullOrWhiteSpace(standardError) || standardError.Contains("imported") || standardError.Contains("wczytano do zbioru") || standardError.Contains("not changed") || standardError.Contains("bez zmian"))
@@ -146,7 +177,7 @@ namespace GnuPG
                     indexOfKeyStart = standardError.IndexOf(keyWord);
                 var keyStartToEnd = standardError.Substring(indexOfKeyStart + keyWord.Length);
                 var keyFragment = keyStartToEnd.Substring(0, keyStartToEnd.IndexOf(":"));
-                return Utility.GetPublicKeyId(keyFragment);
+                return Utility.GetPublicKeyId(LogFilePath, keyFragment);
             }
             else
             {

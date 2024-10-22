@@ -8,7 +8,18 @@ namespace GnuPG
 {
     internal static class Utility
     {
-        internal static bool IsGnuPgInstalledOnPc()
+        public static void LogCommand(string logFilePath, string name, string text)
+        {
+            text = text.Replace("Microsoft Windows [Version 10.0.20348.1547]", "");
+            text = text.Replace("(c) Microsoft Corporation.All rights reserved.", "");
+
+            using (StreamWriter sw = new StreamWriter(logFilePath, true))
+            {
+                sw.WriteLine($"[{DateTime.Now}]{name}: {text}");
+            }
+        }
+
+        internal static bool IsGnuPgInstalledOnPc(string logFilePath)
         {
             try
             {
@@ -20,9 +31,13 @@ namespace GnuPG
                 cmd.StandardInput.Close();
                 cmd.StandardInput.Dispose();
                 var result = cmd.StandardOutput.ReadToEnd();
+                var standardError = cmd.StandardError.ReadToEnd();
                 cmd.WaitForExit();
                 cmd.Dispose();
                 cmd.Close();
+
+                Utility.LogCommand(logFilePath, "StandardOutput", result);
+                Utility.LogCommand(logFilePath, "StandardError", standardError);
 
                 if (result.ToLower().Contains("gpg (gnupg)"))
                     return true;
@@ -85,14 +100,14 @@ namespace GnuPG
             return fileBytes;
         }
 
-        internal static void RemoveKeys(string keyId)
+        internal static void RemoveKeys(string logFilePath, string keyId)
         {
-            RemoveSecretKey(keyId);
+            RemoveSecretKey(logFilePath, keyId);
             Thread.Sleep(1000);
-            RemovePublicKey(keyId);
+            RemovePublicKey(logFilePath, keyId);
         }
 
-        internal static string GetSecretKeyId(string keyFragment)
+        internal static string GetSecretKeyId(string logFilePath, string keyFragment)
         {
             var cmd = CreateProcess();
             cmd.Start();
@@ -101,8 +116,13 @@ namespace GnuPG
             cmd.StandardInput.Close();
             cmd.StandardInput.Dispose();
             var result = cmd.StandardOutput.ReadToEnd();
+            var standardError = cmd.StandardError.ReadToEnd();
             cmd.WaitForExit();
+            cmd.Dispose();
             cmd.Close();
+
+            Utility.LogCommand(logFilePath, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, "StandardError", standardError);
 
             var indexOfEndKey = result.IndexOf(keyFragment) + keyFragment.Length;
             if (indexOfEndKey == -1 - keyFragment.Length)
@@ -116,7 +136,7 @@ namespace GnuPG
             return partFromStartToKeyEnd.Substring(keyStartIndex);
         }
 
-        internal static string GetPublicKeyId(string keyFragment)
+        internal static string GetPublicKeyId(string logFilePath, string keyFragment)
         {
             var cmd = Utility.CreateProcess();
             cmd.Start();
@@ -125,8 +145,13 @@ namespace GnuPG
             cmd.StandardInput.Close();
             cmd.StandardInput.Dispose();
             var result = cmd.StandardOutput.ReadToEnd();
+            var standardError = cmd.StandardError.ReadToEnd();
             cmd.WaitForExit();
+            cmd.Dispose();
             cmd.Close();
+
+            Utility.LogCommand(logFilePath, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, "StandardError", standardError);
 
             var indexOfEndKey = result.IndexOf(keyFragment) + keyFragment.Length;
             if (indexOfEndKey == -1 - keyFragment.Length)
@@ -140,7 +165,7 @@ namespace GnuPG
             return partFromStartToKeyEnd.Substring(keyStartIndex);
         }
 
-        private static void RemoveSecretKey(string keyId)
+        private static void RemoveSecretKey(string logFilePath, string keyId)
         {
             var cmd = CreateProcess();
             cmd.Start();
@@ -148,11 +173,17 @@ namespace GnuPG
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
             cmd.StandardInput.Dispose();
+            var result = cmd.StandardOutput.ReadToEnd();
+            var standardError = cmd.StandardError.ReadToEnd();
             cmd.WaitForExit();
+            cmd.Dispose();
             cmd.Close();
+
+            Utility.LogCommand(logFilePath, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, "StandardError", standardError);
         }
 
-        private static void RemovePublicKey(string keyId)
+        private static void RemovePublicKey(string logFilePath, string keyId)
         {
             var cmd = CreateProcess();
             cmd.Start();
@@ -160,8 +191,14 @@ namespace GnuPG
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
             cmd.StandardInput.Dispose();
+            var result = cmd.StandardOutput.ReadToEnd();
+            var standardError = cmd.StandardError.ReadToEnd();
             cmd.WaitForExit();
+            cmd.Dispose();
             cmd.Close();
+
+            Utility.LogCommand(logFilePath, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, "StandardError", standardError);
         }
     }
 }
