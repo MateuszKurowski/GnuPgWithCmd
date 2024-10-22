@@ -47,7 +47,12 @@ namespace GnuPG
         {
             var publicKeyId = ImportPublicKey(publicKey);
 
-            return EncryptFile(ref publicKeyId, fileBytes);
+            var encryptedFile =  EncryptFile(ref publicKeyId, fileBytes);
+
+            if (!string.IsNullOrWhiteSpace(publicKeyId))
+                Utility.RemoveKeys(LogFilePath, publicKeyId);
+
+            return encryptedFile;
         }
 
         public Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
@@ -93,8 +98,6 @@ namespace GnuPG
             Utility.LogCommand(LogFilePath, "StandardOutput", standardOutput);
             Utility.LogCommand(LogFilePath, "StandardError", standardError);
 
-            Utility.DeleteTempFile(filePath);
-
             if (standardError.ToLower().Contains("skipped: unusable public key"))
             {
                 throw new PublicKeyCurrupted();
@@ -125,8 +128,7 @@ namespace GnuPG
                 throw new PublicKeyNotFoundException();
             }
 
-            if (!string.IsNullOrWhiteSpace(publicKeyId))
-                Utility.RemoveKeys(LogFilePath, publicKeyId);
+            Utility.DeleteTempFile(filePath);
 
             return Utility.GetFile(outputFilePath);
         }
