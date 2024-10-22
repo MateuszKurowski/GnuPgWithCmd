@@ -6,7 +6,7 @@
         {
             /**********************************************************************************************/
 
-            //GnuPG.Decrypt.DecryptData(
+            //new GnuPG.Decrypt().DecryptData(
             //    filePath: @"C:\Users\mkurowski\Downloads\test_klucza.pdf.gpg",
             //    outputFilePath: @"C:\Users\mkurowski\Downloads\rozszyfrowany.pdf",
             //    //passphrase: "",
@@ -15,7 +15,7 @@
 
             /**********************************************************************************************/
 
-            GnuPG.Encrypt.EncryptData(
+            new GnuPG.Encrypt().EncryptData(
                 filePath: @"C:\Users\mkurowski\Downloads\Test.txt",
                 outputFilePath: @"C:\Users\mkurowski\Downloads\Test.txt.gpg",
                 publicKeyPath: @"C:\Users\mkurowski\Downloads\test_public.asc");
