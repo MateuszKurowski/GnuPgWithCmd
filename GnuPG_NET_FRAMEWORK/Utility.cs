@@ -63,8 +63,9 @@ namespace GnuPG
 
         internal static string CreateTempFile(byte[] file, string name = null)
         {
+            Guid uniqueGuid = Guid.NewGuid();
             if (name is null)
-                name = "NavigatorGnuPG_TempFile";
+                name = $"NavigatorGnuPG_{uniqueGuid}";
 
             var path = Path.Combine(Path.GetTempPath(), name);
             try
