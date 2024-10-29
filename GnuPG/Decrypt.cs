@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
@@ -30,6 +31,21 @@ namespace GnuPG
                 LogFilePath = logFilePath;
         }
 
+        public Dictionary<int, byte[]> DecryptData(Dictionary<int, byte[]> files, byte[] privateKey, string passphrase = null)
+        {
+            var result = new Dictionary<int, byte[]>();
+
+            foreach (var file in files)
+            {
+                var fileBytes = file.Value;
+
+                var decryptedFile = DecryptData(fileBytes, passphrase, privateKey);
+                result.Add(file.Key, decryptedFile);
+            }
+
+            return result;
+        }
+
         public void DecryptData(string filePath, string outputFilePath, string passphrase = null, string privateKeyFilePath = null)
         {
             var encryptedFile = File.ReadAllBytes(filePath);
@@ -59,6 +75,7 @@ namespace GnuPG
             var cmd = Utility.CreateProcess();
             cmd.Start();
 
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine(querry);
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -68,11 +85,11 @@ namespace GnuPG
             cmd.WaitForExit();
             cmd.Close();
 
-            Utility.LogCommand(LogFilePath, "StandardOutput", standardOutput);
-            Utility.LogCommand(LogFilePath, "StandardError", standardError);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardOutput", standardOutput);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardError", standardError);
 
-            if (!string.IsNullOrWhiteSpace(secretKeyId))
-                Utility.RemoveKeys(LogFilePath, secretKeyId);
+            //if (!string.IsNullOrWhiteSpace(secretKeyId))
+            //    Utility.RemoveKeys(LogFilePath, secretKeyId);
 
             if (standardError.ToLower().Contains("no secret key")
                  || standardError.ToLower().Contains("brak klucza tajnego"))
@@ -141,6 +158,7 @@ namespace GnuPG
             var cmd = Utility.CreateProcess();
 
             cmd.Start();
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine(querry);
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -151,8 +169,8 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(LogFilePath, "StandardOutput", result);
-            Utility.LogCommand(LogFilePath, "StandardError", standardError);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardOutput", result);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardError", standardError);
 
             Utility.DeleteTempFile(keyPath);
             if (string.IsNullOrWhiteSpace(standardError) || standardError.Contains("secret key imported") || standardError.Contains("wczytany do zbioru"))

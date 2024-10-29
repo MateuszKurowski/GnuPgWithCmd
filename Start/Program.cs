@@ -1,24 +1,26 @@
-﻿namespace Start
+﻿using System.Text;
+
+namespace Start
 {
     public class Program
     {
         public static void Main(string[] args)
         {
+
             /**********************************************************************************************/
 
             //new GnuPG.Decrypt().DecryptData(
-            //    filePath: @"C:\Users\mkurowski\Downloads\test_klucza.pdf.gpg",
-            //    outputFilePath: @"C:\Users\mkurowski\Downloads\rozszyfrowany.pdf",
+            //    filePath: @"C:\Users\mkurowski\Downloads\Test message.asc",
+            //    outputFilePath: @"C:\Users\mkurowski\Downloads\Test message.txt",
             //    //passphrase: "",
-            //    passphrase: "z9-Lo5>j8(6",
-            //    privateKeyFilePath: @"C:\Users\mkurowski\Downloads\ZKluczem_0x9A27D7BE_SECRET.asc");
+            //    privateKeyFilePath: @"C:\Users\mkurowski\Downloads\BezKlucza_0xB18C8FDF_SECRET.asc");
 
             /**********************************************************************************************/
 
-            new GnuPG.Encrypt().EncryptData(
-                filePath: @"C:\Users\mkurowski\Downloads\Test.txt",
-                outputFilePath: @"C:\Users\mkurowski\Downloads\Test.txt.gpg",
-                publicKeyPath: @"C:\Users\mkurowski\Downloads\test_public.asc");
+            //new GnuPG.Encrypt().EncryptData(
+            //    filePath: @"C:\Users\mkurowski\Downloads\Test.txt",
+            //    outputFilePath: @"C:\Users\mkurowski\Downloads\Test.txt.gpg",
+            //    publicKeyPath: @"C:\Users\mkurowski\Downloads\test_public.asc");
 
             /**********************************************************************************************/
         }

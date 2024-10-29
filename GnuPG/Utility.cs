@@ -8,14 +8,24 @@ namespace GnuPG
 {
     internal static class Utility
     {
-        public static void LogCommand(string logFilePath, string name, string text)
+        public static void LogCommand(string logFilePath, int id, string name, string text)
         {
-            text = text.Replace("Microsoft Windows [Version 10.0.20348.1547]", "");
-            text = text.Replace("(c) Microsoft Corporation.All rights reserved.", "");
+            text = text
+                .Replace("Microsoft Windows [Version 10.0.17763.6414]", "")
+                .Replace("Microsoft Windows [Version 10.0.20348.1547]", "")
+                .Replace("(c) Microsoft Corporation.All rights reserved.", "")
+                .Replace("(c) Microsoft Corporation. All rights reserved.", "")
+                .Replace("(c) 2018 Microsoft Corporation. All rights reserved.", "");
 
             using (StreamWriter sw = new StreamWriter(logFilePath, true))
             {
-                sw.WriteLine($"[{DateTime.Now}]{name}: {text}");
+                if (name == "StandardOutput")
+                    sw.WriteLine("****************************************");
+
+                sw.WriteLine($"[{id} - {DateTime.Now}] {name}: {text}");
+
+                if (name == "StandardError")
+                    sw.WriteLine("****************************************");
             }
         }
 
@@ -26,6 +36,7 @@ namespace GnuPG
                 var cmd = CreateProcess();
                 cmd.Start();
 
+                var cmdId = cmd.Id;
                 cmd.StandardInput.WriteLine("gpg --version & exit");
                 cmd.StandardInput.Flush();
                 cmd.StandardInput.Close();
@@ -36,8 +47,8 @@ namespace GnuPG
                 cmd.Dispose();
                 cmd.Close();
 
-                Utility.LogCommand(logFilePath, "StandardOutput", result);
-                Utility.LogCommand(logFilePath, "StandardError", standardError);
+                Utility.LogCommand(logFilePath, cmdId, "StandardOutput", result);
+                Utility.LogCommand(logFilePath, cmdId, "StandardError", standardError);
 
                 if (result.ToLower().Contains("gpg (gnupg)"))
                     return true;
@@ -111,6 +122,8 @@ namespace GnuPG
         {
             var cmd = CreateProcess();
             cmd.Start();
+            var cmdId = cmd.Id;
+
             cmd.StandardInput.WriteLine("gpg --list-secret-key");
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -121,8 +134,8 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(logFilePath, "StandardOutput", result);
-            Utility.LogCommand(logFilePath, "StandardError", standardError);
+            Utility.LogCommand(logFilePath, cmdId, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, cmdId, "StandardError", standardError);
 
             var indexOfEndKey = result.IndexOf(keyFragment) + keyFragment.Length;
             if (indexOfEndKey == -1 - keyFragment.Length)
@@ -140,6 +153,7 @@ namespace GnuPG
         {
             var cmd = Utility.CreateProcess();
             cmd.Start();
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine("gpg --list-key");
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -150,8 +164,8 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(logFilePath, "StandardOutput", result);
-            Utility.LogCommand(logFilePath, "StandardError", standardError);
+            Utility.LogCommand(logFilePath, cmdId, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, cmdId, "StandardError", standardError);
 
             var indexOfEndKey = result.IndexOf(keyFragment) + keyFragment.Length;
             if (indexOfEndKey == -1 - keyFragment.Length)
@@ -169,6 +183,7 @@ namespace GnuPG
         {
             var cmd = CreateProcess();
             cmd.Start();
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine($"gpg --yes --batch --delete-secret-key \"{keyId}\"");
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -179,14 +194,15 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(logFilePath, "StandardOutput", result);
-            Utility.LogCommand(logFilePath, "StandardError", standardError);
+            Utility.LogCommand(logFilePath, cmdId, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, cmdId, "StandardError", standardError);
         }
 
         private static void RemovePublicKey(string logFilePath, string keyId)
         {
             var cmd = CreateProcess();
             cmd.Start();
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine($"gpg --yes --batch --delete-key \"{keyId}\"");
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -197,8 +213,8 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(logFilePath, "StandardOutput", result);
-            Utility.LogCommand(logFilePath, "StandardError", standardError);
+            Utility.LogCommand(logFilePath, cmdId, "StandardOutput", result);
+            Utility.LogCommand(logFilePath, cmdId, "StandardError", standardError);
         }
     }
 }

@@ -35,27 +35,30 @@ namespace GnuPG
             var file = File.ReadAllBytes(filePath);
             var publicKey = File.ReadAllBytes(publicKeyPath);
 
-            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath))
-                throw new GnuPGIsNotInstalledException();
-
             var encryptedFile = EncryptData(file, publicKey);
             File.WriteAllBytes(outputFilePath, encryptedFile);
         }
 
         public byte[] EncryptData(byte[] fileBytes, byte[] publicKey)
         {
+            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath))
+                throw new GnuPGIsNotInstalledException();
+
             var publicKeyId = ImportPublicKey(publicKey);
 
             var encryptedFile = EncryptFile(ref publicKeyId, fileBytes);
 
-            if (!string.IsNullOrWhiteSpace(publicKeyId))
-                Utility.RemoveKeys(LogFilePath, publicKeyId);
+            //if (!string.IsNullOrWhiteSpace(publicKeyId))
+            //    Utility.RemoveKeys(LogFilePath, publicKeyId);
 
             return encryptedFile;
         }
 
         public Dictionary<int, byte[]> EncryptData(Dictionary<int, byte[]> files, byte[] publicKey)
         {
+            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath))
+                throw new GnuPGIsNotInstalledException();
+
             var publicKeyId = ImportPublicKey(publicKey);
             var result = new Dictionary<int, byte[]>();
 
@@ -67,8 +70,8 @@ namespace GnuPG
                 result.Add(file.Key, encryptedFileBytes);
             }
 
-            if (!string.IsNullOrWhiteSpace(publicKeyId))
-                Utility.RemoveKeys(LogFilePath, publicKeyId);
+            //if (!string.IsNullOrWhiteSpace(publicKeyId))
+            //    Utility.RemoveKeys(LogFilePath, publicKeyId);
 
             return result;
         }
@@ -82,6 +85,7 @@ namespace GnuPG
             var cmd = Utility.CreateProcess();
             cmd.Start();
 
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine(querry);
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -93,8 +97,8 @@ namespace GnuPG
             cmd.WaitForExit();
             cmd.Close();
 
-            Utility.LogCommand(LogFilePath, "StandardOutput", standardOutput);
-            Utility.LogCommand(LogFilePath, "StandardError", standardError);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardOutput", standardOutput);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardError", standardError);
 
 
             if (standardError.ToLower().Contains("skipped: unusable public key"))
@@ -153,6 +157,7 @@ namespace GnuPG
             var querry = BuildQuerry();
             var cmd = Utility.CreateProcess();
             cmd.Start();
+            var cmdId = cmd.Id;
             cmd.StandardInput.WriteLine(querry);
             cmd.StandardInput.Flush();
             cmd.StandardInput.Close();
@@ -163,8 +168,8 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(LogFilePath, "StandardOutput", result);
-            Utility.LogCommand(LogFilePath, "StandardError", standardError);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardOutput", result);
+            Utility.LogCommand(LogFilePath, cmdId, "StandardError", standardError);
 
             Utility.DeleteTempFile(keyPath);
             if (string.IsNullOrWhiteSpace(standardError) || standardError.Contains("imported") || standardError.Contains("wczytano do zbioru") || standardError.Contains("not changed") || standardError.Contains("bez zmian"))
