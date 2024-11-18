@@ -10,10 +10,14 @@ namespace GnuPG
     {
         public bool LogCoomands { get; set; }
         public string LogFilePath { get; set; }
+        public Guid OperationId { get; set; }
 
         public Decrypt(bool logCoomands = true, string logFilePath = null)
         {
+            OperationId = Guid.NewGuid();
             LogCoomands = logCoomands;
+
+            Utility.LogCommand(LogFilePath, 0, OperationId, "Odszyfrowywanie", "Rozpoczęcie nowej operacji");
 
             if (string.IsNullOrWhiteSpace(logFilePath))
             {
@@ -58,7 +62,7 @@ namespace GnuPG
         public byte[] DecryptData(byte[] encyptedFileBytes, string passphrase = null, byte[] privateKey = null)
         {
             string secretKeyId = null;
-            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath))
+            if (!Utility.IsGnuPgInstalledOnPc(LogFilePath, OperationId))
             {
                 throw new GnuPGIsNotInstalledException();
             }
@@ -85,8 +89,8 @@ namespace GnuPG
             cmd.WaitForExit();
             cmd.Close();
 
-            Utility.LogCommand(LogFilePath, cmdId, "StandardOutput", standardOutput);
-            Utility.LogCommand(LogFilePath, cmdId, "StandardError", standardError);
+            Utility.LogCommand(LogFilePath, cmdId, OperationId, "StandardOutput", standardOutput);
+            Utility.LogCommand(LogFilePath, cmdId, OperationId, "StandardError", standardError);
 
             //if (!string.IsNullOrWhiteSpace(secretKeyId))
             //    Utility.RemoveKeys(LogFilePath, secretKeyId);
@@ -169,8 +173,8 @@ namespace GnuPG
             cmd.Dispose();
             cmd.Close();
 
-            Utility.LogCommand(LogFilePath, cmdId, "StandardOutput", result);
-            Utility.LogCommand(LogFilePath, cmdId, "StandardError", standardError);
+            Utility.LogCommand(LogFilePath, cmdId, OperationId, "StandardOutput", result);
+            Utility.LogCommand(LogFilePath, cmdId, OperationId, "StandardError", standardError);
 
             Utility.DeleteTempFile(keyPath);
             if (string.IsNullOrWhiteSpace(standardError) || standardError.Contains("secret key imported") || standardError.Contains("wczytany do zbioru"))
@@ -188,7 +192,7 @@ namespace GnuPG
                     indexOfKeyStart = standardError.IndexOf(keyWord);
                 var keyStartToEnd = standardError.Substring(indexOfKeyStart + keyWord.Length);
                 var keyFragment = keyStartToEnd.Substring(0, keyStartToEnd.IndexOf(":"));
-                return Utility.GetSecretKeyId(LogFilePath, keyFragment);
+                return Utility.GetSecretKeyId(LogFilePath, keyFragment, OperationId);
             }
             else
             {
