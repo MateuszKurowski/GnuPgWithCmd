@@ -16,8 +16,6 @@ namespace GnuPG
             OperationId = Guid.NewGuid();
             LogCoomands = logCoomands;
 
-            Utility.LogCommand(LogFilePath, 0, OperationId, "Szyfrowanie", "Rozpoczęcie nowej operacji");
-
             if (string.IsNullOrWhiteSpace(logFilePath))
             {
                 string userDocumentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -32,6 +30,8 @@ namespace GnuPG
             }
             else
                 LogFilePath = logFilePath;
+
+            Utility.LogCommand(LogFilePath, 0, OperationId, "Szyfrowanie", "Rozpoczęcie nowej operacji");
         }
 
         public void EncryptData(string filePath, string outputFilePath, string publicKeyPath)

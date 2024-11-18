@@ -17,8 +17,6 @@ namespace GnuPG
             OperationId = Guid.NewGuid();
             LogCoomands = logCoomands;
 
-            Utility.LogCommand(LogFilePath, 0, OperationId, "Odszyfrowywanie", "Rozpoczęcie nowej operacji");
-
             if (string.IsNullOrWhiteSpace(logFilePath))
             {
                 string userDocumentsPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -33,6 +31,9 @@ namespace GnuPG
             }
             else
                 LogFilePath = logFilePath;
+
+            Utility.LogCommand(LogFilePath, 0, OperationId, "Odszyfrowywanie", "Rozpoczęcie nowej operacji");
+
         }
 
         public Dictionary<int, byte[]> DecryptData(Dictionary<int, byte[]> files, byte[] privateKey, string passphrase = null)
